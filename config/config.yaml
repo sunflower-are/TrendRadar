@@ -99,3 +99,23 @@ platforms:
     name: "抖音"
   - id: "zhihu"
     name: "知乎"
+  - id: "taobao-hats"
+    name: "淘宝帽子商品"
+    type: "ecommerce"
+    search_keywords: ["帽子", "帽", "headwear"]
+  - id: "xiaohongshu-hats"
+    name: "小红书帽子内容"
+    type: "social"
+    search_keywords: ["帽子", "帽搭配", "帽子穿搭"]
+  - id: "tmall-hats"
+    name: "天猫帽子趋势"
+    type: "ecommerce"
+    search_keywords: ["帽子", "品牌帽", "设计师帽"]
+  - id: "jd-hats"
+    name: "京东帽子热销"
+    type: "ecommerce" 
+    search_keywords: ["帽子", "运动帽", "防晒帽"]
+  - id: "dewu-hats"
+    name: "得物帽子潮流"
+    type: "ecommerce"
+    search_keywords: ["帽子", "潮牌帽", "限量帽"]
