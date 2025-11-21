@@ -330,6 +330,393 @@ def html_escape(text: str) -> str:
     )
 
 
+# === 电商平台爬虫 ===
+class EcommerceCrawler:
+    """电商平台爬虫"""
+    
+    def __init__(self, proxy_url: Optional[str] = None):
+        self.proxy_url = proxy_url
+        self.session = requests.Session()
+        self.session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+        })
+        
+        if proxy_url:
+            self.session.proxies = {
+                'http': proxy_url,
+                'https': proxy_url
+            }
+
+    def search_taobao(self, keyword: str, max_results: int = 50) -> List[Dict]:
+        """搜索淘宝商品"""
+        products = []
+        try:
+            # 模拟淘宝搜索API
+            search_url = "https://s.taobao.com/search"
+            params = {
+                'q': keyword,
+                'sort': 'sale-desc',  # 按销量排序
+                's': '0'  # 起始位置
+            }
+            
+            response = self.session.get(search_url, params=params, timeout=15)
+            if response.status_code == 200:
+                # 解析HTML获取商品信息
+                # 这里需要根据实际页面结构进行解析
+                # 由于淘宝反爬虫机制，这里使用简化版本
+                products = self._parse_taobao_results(response.text, max_results)
+                
+        except Exception as e:
+            print(f"淘宝搜索失败: {e}")
+            
+        return products
+
+    def search_tmall(self, keyword: str, max_results: int = 50) -> List[Dict]:
+        """搜索天猫商品"""
+        products = []
+        try:
+            search_url = "https://list.tmall.com/search_product.htm"
+            params = {
+                'q': keyword,
+                'sort': 's',
+                'style': 'g',
+                'from': '.list.pc_1_searchbutton'
+            }
+            
+            response = self.session.get(search_url, params=params, timeout=15)
+            if response.status_code == 200:
+                products = self._parse_tmall_results(response.text, max_results)
+                
+        except Exception as e:
+            print(f"天猫搜索失败: {e}")
+            
+        return products
+
+    def search_jd(self, keyword: str, max_results: int = 50) -> List[Dict]:
+        """搜索京东商品"""
+        products = []
+        try:
+            search_url = "https://search.jd.com/Search"
+            params = {
+                'keyword': keyword,
+                'wq': keyword,
+                'psort': '3'  # 按销量排序
+            }
+            
+            response = self.session.get(search_url, params=params, timeout=15)
+            if response.status_code == 200:
+                products = self._parse_jd_results(response.text, max_results)
+                
+        except Exception as e:
+            print(f"京东搜索失败: {e}")
+            
+        return products
+
+    def search_pdd(self, keyword: str, max_results: int = 50) -> List[Dict]:
+        """搜索拼多多商品"""
+        products = []
+        try:
+            search_url = "https://search.pinduoduo.com/search"
+            params = {
+                'keyword': keyword,
+                'sortType': 6  # 按销量排序
+            }
+            
+            response = self.session.get(search_url, params=params, timeout=15)
+            if response.status_code == 200:
+                products = self._parse_pdd_results(response.text, max_results)
+                
+        except Exception as e:
+            print(f"拼多多搜索失败: {e}")
+            
+        return products
+
+    def search_vip(self, keyword: str, max_results: int = 50) -> List[Dict]:
+        """搜索唯品会商品"""
+        products = []
+        try:
+            search_url = "https://category.vip.com/suggest.php"
+            params = {
+                'keyword': keyword,
+                'ff': '235|12|1|1'
+            }
+            
+            response = self.session.get(search_url, params=params, timeout=15)
+            if response.status_code == 200:
+                products = self._parse_vip_results(response.text, max_results)
+                
+        except Exception as e:
+            print(f"唯品会搜索失败: {e}")
+            
+        return products
+
+    def search_xiaohongshu(self, keyword: str, max_results: int = 50) -> List[Dict]:
+        """搜索小红书商品笔记"""
+        products = []
+        try:
+            search_url = "https://www.xiaohongshu.com/fe_api/burdock/weixin/v2/search/notes"
+            params = {
+                'keyword': keyword,
+                'page': 1,
+                'page_size': 20,
+                'sort': 'general'  # 综合排序
+            }
+            
+            headers = {
+                'Referer': 'https://www.xiaohongshu.com/',
+                'X-Sign': 'X'  # 需要实际的签名
+            }
+            
+            response = self.session.get(search_url, params=params, headers=headers, timeout=15)
+            if response.status_code == 200:
+                products = self._parse_xiaohongshu_results(response.json(), max_results)
+                
+        except Exception as e:
+            print(f"小红书搜索失败: {e}")
+            
+        return products
+
+    def _parse_taobao_results(self, html: str, max_results: int) -> List[Dict]:
+        """解析淘宝搜索结果"""
+        products = []
+        # 简化的解析逻辑，实际使用时需要根据页面结构调整
+        try:
+            # 这里使用正则表达式提取商品信息
+            pattern = r'"raw_title":"([^"]+)".*?"view_price":"([^"]+)".*?"view_sales":"([^"]+)".*?"nick":"([^"]+)"'
+            matches = re.findall(pattern, html)
+            
+            for i, match in enumerate(matches[:max_results]):
+                if i >= max_results:
+                    break
+                    
+                title, price, sales, shop = match
+                products.append({
+                    'title': clean_title(title),
+                    'price': price,
+                    'sales': sales,
+                    'shop': shop,
+                    'platform': '淘宝',
+                    'rank': i + 1,
+                    'url': f'https://item.taobao.com/item.htm?id=模拟{i}'  # 实际需要获取真实商品ID
+                })
+                
+        except Exception as e:
+            print(f"解析淘宝结果失败: {e}")
+            
+        return products
+
+    def _parse_tmall_results(self, html: str, max_results: int) -> List[Dict]:
+        """解析天猫搜索结果"""
+        products = []
+        try:
+            # 简化的解析逻辑
+            pattern = r'"title":"([^"]+)".*?"price":"([^"]+)".*?"sale":"([^"]+)".*?"shop":"([^"]+)"'
+            matches = re.findall(pattern, html)
+            
+            for i, match in enumerate(matches[:max_results]):
+                title, price, sales, shop = match
+                products.append({
+                    'title': clean_title(title),
+                    'price': price,
+                    'sales': sales,
+                    'shop': shop,
+                    'platform': '天猫',
+                    'rank': i + 1,
+                    'url': f'https://detail.tmall.com/item.htm?id=模拟{i}'
+                })
+                
+        except Exception as e:
+            print(f"解析天猫结果失败: {e}")
+            
+        return products
+
+    def _parse_jd_results(self, html: str, max_results: int) -> List[Dict]:
+        """解析京东搜索结果"""
+        products = []
+        try:
+            # 简化的解析逻辑
+            pattern = r'"name":"([^"]+)".*?"price":"([^"]+)".*?"shop":"([^"]+)"'
+            matches = re.findall(pattern, html)
+            
+            for i, match in enumerate(matches[:max_results]):
+                title, price, shop = match
+                products.append({
+                    'title': clean_title(title),
+                    'price': price,
+                    'sales': '未知',  # 京东页面结构不同
+                    'shop': shop,
+                    'platform': '京东',
+                    'rank': i + 1,
+                    'url': f'https://item.jd.com/模拟{i}.html'
+                })
+                
+        except Exception as e:
+            print(f"解析京东结果失败: {e}")
+            
+        return products
+
+    def _parse_pdd_results(self, html: str, max_results: int) -> List[Dict]:
+        """解析拼多多搜索结果"""
+        products = []
+        try:
+            pattern = r'"name":"([^"]+)".*?"price":(\d+).*?"sales":(\d+)'
+            matches = re.findall(pattern, html)
+            
+            for i, match in enumerate(matches[:max_results]):
+                title, price, sales = match
+                products.append({
+                    'title': clean_title(title),
+                    'price': f'{int(price)/100:.2f}',
+                    'sales': f'{sales}人拼',
+                    'shop': '拼多多商家',
+                    'platform': '拼多多',
+                    'rank': i + 1,
+                    'url': f'https://yangkeduo.com/goods.html?goods_id=模拟{i}'
+                })
+                
+        except Exception as e:
+            print(f"解析拼多多结果失败: {e}")
+            
+        return products
+
+    def _parse_vip_results(self, html: str, max_results: int) -> List[Dict]:
+        """解析唯品会搜索结果"""
+        products = []
+        try:
+            pattern = r'"name":"([^"]+)".*?"price":"([^"]+)".*?"brand":"([^"]+)"'
+            matches = re.findall(pattern, html)
+            
+            for i, match in enumerate(matches[:max_results]):
+                title, price, brand = match
+                products.append({
+                    'title': clean_title(title),
+                    'price': price,
+                    'sales': '唯品会特卖',
+                    'shop': brand,
+                    'platform': '唯品会',
+                    'rank': i + 1,
+                    'url': f'https://detail.vip.com/detail-模拟{i}.html'
+                })
+                
+        except Exception as e:
+            print(f"解析唯品会结果失败: {e}")
+            
+        return products
+
+    def _parse_xiaohongshu_results(self, data: Dict, max_results: int) -> List[Dict]:
+        """解析小红书搜索结果"""
+        products = []
+        try:
+            notes = data.get('data', {}).get('notes', [])
+            for i, note in enumerate(notes[:max_results]):
+                title = note.get('title', '') or note.get('desc', '')
+                products.append({
+                    'title': clean_title(title),
+                    'price': '笔记',
+                    'sales': f'{note.get("likes", 0)}点赞',
+                    'shop': note.get('user', {}).get('nickname', '小红书用户'),
+                    'platform': '小红书',
+                    'rank': i + 1,
+                    'url': f'https://www.xiaohongshu.com/explore/{note.get("id", "")}'
+                })
+                
+        except Exception as e:
+            print(f"解析小红书结果失败: {e}")
+            
+        return products
+
+    def crawl_platforms(self, platforms: List[Dict], keywords: List[str], max_products: int = 50) -> Tuple[Dict, Dict, List]:
+        """爬取多个电商平台"""
+        results = {}
+        platform_info = {}
+        failed_platforms = []
+
+        for platform in platforms:
+            platform_id = platform['id']
+            platform_name = platform.get('name', platform_id)
+            platform_info[platform_id] = platform_name
+            
+            print(f"开始爬取 {platform_name}...")
+            
+            try:
+                platform_products = []
+                for keyword in keywords:
+                    if platform_id == 'taobao':
+                        products = self.search_taobao(keyword, max_products)
+                    elif platform_id == 'tmall':
+                        products = self.search_tmall(keyword, max_products)
+                    elif platform_id == 'jd':
+                        products = self.search_jd(keyword, max_products)
+                    elif platform_id == 'pdd':
+                        products = self.search_pdd(keyword, max_products)
+                    elif platform_id == 'vip':
+                        products = self.search_vip(keyword, max_products)
+                    elif platform_id == 'xiaohongshu':
+                        products = self.search_xiaohongshu(keyword, max_products)
+                    else:
+                        print(f"未知平台: {platform_id}")
+                        continue
+                    
+                    platform_products.extend(products)
+                    time.sleep(random.uniform(1, 3))  # 请求间隔
+                
+                # 去重并限制数量
+                unique_products = []
+                seen_titles = set()
+                for product in platform_products:
+                    if product['title'] not in seen_titles and len(unique_products) < max_products:
+                        seen_titles.add(product['title'])
+                        unique_products.append(product)
+                
+                results[platform_id] = unique_products
+                print(f"{platform_name} 爬取成功: {len(unique_products)} 个商品")
+                
+            except Exception as e:
+                print(f"{platform_name} 爬取失败: {e}")
+                failed_platforms.append(platform_id)
+            
+            # 平台间请求间隔
+            time.sleep(random.uniform(2, 5))
+        
+        return results, platform_info, failed_platforms
+
+
+# === 数据处理 ===
+def save_products_to_file(results: Dict, platform_info: Dict, failed_platforms: List) -> str:
+    """保存商品数据到文件"""
+    file_path = get_output_path("txt", f"{format_time_filename()}.txt")
+
+    with open(file_path, "w", encoding="utf-8") as f:
+        for platform_id, products in results.items():
+            platform_name = platform_info.get(platform_id, platform_id)
+            f.write(f"{platform_id} | {platform_name}\n")
+
+            for i, product in enumerate(products, 1):
+                title = product['title']
+                price = product['price']
+                sales = product['sales']
+                shop = product['shop']
+                url = product.get('url', '')
+                
+                line = f"{i}. {title} | 价格: {price} | 销量: {sales} | 店铺: {shop}"
+                if url:
+                    line += f" [URL:{url}]"
+                f.write(line + "\n")
+
+            f.write("\n")
+
+        if failed_platforms:
+            f.write("==== 以下平台请求失败 ====\n")
+            for platform_id in failed_platforms:
+                f.write(f"{platform_id}\n")
+
+    return file_path
+
 # === 推送记录管理 ===
 class PushRecordManager:
     """推送记录管理器"""
