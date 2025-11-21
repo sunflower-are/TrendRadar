@@ -71,9 +71,9 @@ notification:
 
 # 用于让关注度更高的新闻在更前面显示，即用算法重新组合不同平台的热搜排序形成你侧重的热搜，合起来是 1 就行
 weight:
-  rank_weight: 0.6 # 排名权重
+  rank_weight: 0.3 # 排名权重
   frequency_weight: 0.3 # 频次权重
-  hotness_weight: 0.1 # 热度权重
+  hotness_weight: 0.4 # 热度权重
 
 # name 可以定义任意名称，只具有显示作用，即使项目运行了几天后，忽然改掉 name 也不会影响代码的正常运行
 platforms:
@@ -99,23 +99,15 @@ platforms:
     name: "抖音"
   - id: "zhihu"
     name: "知乎"
-  - id: "taobao-hats"
-    name: "淘宝帽子商品"
-    type: "ecommerce"
-    search_keywords: ["帽子", "帽", "headwear"]
-  - id: "xiaohongshu-hats"
-    name: "小红书帽子内容"
-    type: "social"
-    search_keywords: ["帽子", "帽搭配", "帽子穿搭"]
-  - id: "tmall-hats"
-    name: "天猫帽子趋势"
-    type: "ecommerce"
-    search_keywords: ["帽子", "品牌帽", "设计师帽"]
-  - id: "jd-hats"
-    name: "京东帽子热销"
-    type: "ecommerce" 
-    search_keywords: ["帽子", "运动帽", "防晒帽"]
+  - id: "taobao"
+    name: "淘宝"
+  - id: "xiaohongshu"
+    name: "小红书"
+  - id: "tmall"
+    name: "天猫"
+  - id: "jd"
+    name: "京东"
   - id: "dewu-hats"
-    name: "得物帽子潮流"
-    type: "ecommerce"
-    search_keywords: ["帽子", "潮牌帽", "限量帽"]
+    name: "得物"
+  - id: "xiaohongshu"
+    name: "小红书"
